@@ -7,7 +7,7 @@ import json
 import os
 import zipfile
 
-# --- 0. IMAGE PRE-PROCESSING ---
+
 IMAGE_DIR = 'assets/audit_images'
 ZIP_PATH = 'assets/audit_images.zip'
 
@@ -25,7 +25,7 @@ if os.path.exists(IMAGE_DIR):
             except IndexError:
                 continue
 
-# --- 1. DATA LOADING & PRE-PROCESSING ---
+
 try:
     with open('assets/authorized_footprints.json') as f:
         authorized_geojson = json.load(f)
@@ -76,10 +76,10 @@ for i, feature in enumerate(features):
 
 df = pd.DataFrame(real_site_data)
 
-# --- 2. INITIALIZE APP ---
+
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
-# --- 3. LAYOUT ---
+
 app.layout = dbc.Container(fluid=True, children=[
     html.H1("Urban Construction Monitoring Dashboard", className="text-center my-4"),
     dcc.Store(id='data-store', data=df.to_dict('records')),
@@ -142,9 +142,7 @@ app.layout = dbc.Container(fluid=True, children=[
     dbc.Row([dbc.Col(html.Footer("Made By Team Mred", className="text-center text-muted py-4 fw-light"), width=12)])
 ])
 
-# --- 4. CALLBACKS ---
 
-# NEW: Callback to sync Map Clicks or Data changes with the inspection selection
 @callback(
     Output("inspect-id", "value"),
     [Input("data-store", "data"),
@@ -158,12 +156,10 @@ def sync_selection(data, clickData):
     
     trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
-    # If user clicks a marker on the main map
+    
     if trigger_id == "map" and clickData:
-        # customdata[0] contains the 'id' we added in px.scatter_mapbox
         return clickData['points'][0]['customdata'][0]
     
-    # Default selection on data load
     if trigger_id == "data-store":
         return pd.DataFrame(data)['id'].iloc[0] if data else no_update
         
@@ -178,7 +174,6 @@ def sync_selection(data, clickData):
 def update_ui(data, basemap_style):
     current_df = pd.DataFrame(data)
     
-    # custom_data=['id'] allows us to access the ID when the marker is clicked
     fig = px.scatter_mapbox(
         current_df, 
         lat="lat", 
@@ -186,25 +181,24 @@ def update_ui(data, basemap_style):
         color="is_authorized",
         color_discrete_map={True: "green", False: "red"}, 
         custom_data=['id'], 
-        # --- NEW HOVER SETTINGS ---
-        hover_name="id",           # Displays the ID in bold at the top of the tooltip
-        hover_data={               # Control what else shows up
-            "id": False,           # Hide the redundant 'id' line since it's in hover_name
-            "lat": False,          # Hide raw latitude
-            "lon": False,          # Hide raw longitude
-            "is_authorized": True, # Show status
-            "location_name": True  # Show the friendly name
+        hover_name="id",           
+        hover_data={               
+            "id": False,           
+            "lat": False,          
+            "lon": False,          
+            "is_authorized": True, 
+            "location_name": True  
         },
-        # --------------------------
+        
         zoom=14, 
         height=550
     )
 
-    # Rename labels for a cleaner look in the tooltip
+    
     fig.update_traces(
         hovertemplate="<b>Site ID: %{hovertext}</b><br>Location: %{customdata[1]}<br>Authorized: %{customdata[2]}<extra></extra>"
     )
-    # Note: If using the simplified approach above, standard Plotly labels usually suffice:
+
     fig.update_layout(hoverlabel=dict(bgcolor="white", font_size=14))
     
     layers = []
